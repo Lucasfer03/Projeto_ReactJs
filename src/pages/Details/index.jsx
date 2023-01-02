@@ -6,42 +6,94 @@ import { ButtonText } from "../../components/buttonText";
 import { Section } from "../../components/section";
 import { Tag } from "../../components/tag";
 
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { api } from "../../services/api";
+
 export function Details() {
+  const [data, setData] = useState(null);
+
+  const params = useParams();
+  const navigate = useNavigate();
+
+  function handleBack(){
+    navigate(-1);
+  }
+
+  async function handleRemove(){
+    const confirm = window.confirm("Deseja realmente remover a nota?");
+
+    if(confirm){
+      await api.delete(`/notes/${params.id}`);
+      navigate(-1);
+    }
+  }
+
+  useEffect(() => {
+    async function fetchNote(){
+      const response = await api.get(`/notes/${params.id}`);
+      setData(response.data);
+    }
+
+    fetchNote();
+  }, [])
+
   return (
     <Container>
       <Header />
 
-      <main>
+      {
+        data &&
+        <main>
         <Content>
-          <ButtonText title="Excluir nota" />
+          <ButtonText 
+          title="Excluir nota" 
+          onClick={handleRemove}
+          />
 
-          <h1>Introdução ao React</h1>
+          <h1>{data.title}</h1>
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Enim
-            fugiat fugit impedit nihil veritatis molestiae facilis hic nisi,
-            vel, magni, commodi obcaecati quia accusantium dolore amet voluptas
-            laudantium perspiciatis sunt!
+            {data.description}
           </p>
 
-          <Section title="Links úteis">
+          {
+            data.links &&
+            <Section title="Links úteis">
             <Links>
-              <li>
-                <a href="#">https://www.rocketseat.com.br/</a>
+              {
+                data.links.map(link => (
+                <li key={String(link.id)}>
+                <a href={link.url} target="_blank">
+                  {link.url}
+                </a>
               </li>
-              <li>
-                <a href="#">https://www.instagram.com/lukassfer_/</a>
-              </li>
+              ))
+              }
             </Links>
           </Section>
+          }
 
-          <Section title="Marcadores">
-            <Tag title="express" />
-            <Tag title="nodejs" />
-          </Section>
+          {
+            data.tags &&
+            <Section title="Marcadores">
+            {
+              data.tags.map(tag => (
+              <Tag 
+              key={String(tag.id)}
+              title={tag.name}
+              />
+              ))
+            }
+            </Section>
+          }
 
-          <Button title="Voltar" />
+          <Button 
+          title="Voltar" 
+          onClick={handleBack}
+          />
         </Content>
       </main>
+      }
     </Container>
   );
 }
